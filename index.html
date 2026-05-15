@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mark & Kati – Digitales Gästebuch 💕</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    min-height: 100vh;
+    font-family: 'Jost', sans-serif;
+    font-weight: 300;
+    background: #fdf8f2;
+    overflow-x: hidden;
+  }
+
+  /* ── Background ── */
+  .bg {
+    position: fixed; inset: 0; z-index: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 15% 0%, rgba(255,215,180,0.5) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 70% at 85% 100%, rgba(230,190,160,0.4) 0%, transparent 60%),
+      linear-gradient(160deg, #fdf9f3 0%, #f7ede0 50%, #fdf3e8 100%);
+  }
+
+  /* ── Petals ── */
+  .petal {
+    position: fixed; top: -40px;
+    pointer-events: none; z-index: 1;
+    animation: fall linear infinite;
+    user-select: none;
+  }
+  @keyframes fall {
+    0%   { transform: translateY(0) rotate(0deg); opacity: 0; }
+    8%   { opacity: 1; }
+    92%  { opacity: 0.6; }
+    100% { transform: translateY(110vh) rotate(380deg); opacity: 0; }
+  }
+
+  /* ── Layout ── */
+  .page {
+    position: relative; z-index: 2;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 3rem 1rem 5rem;
+    min-height: 100vh;
+  }
+
+  /* ── Header ── */
+  .header {
+    text-align: center;
+    margin-bottom: 2rem;
+    animation: slideDown 0.8s cubic-bezier(0.22,1,0.36,1) both;
+  }
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .ornament {
+    font-size: 0.75rem;
+    letter-spacing: 0.6em;
+    color: #c9a87c;
+    margin-bottom: 0.7rem;
+    display: block;
+  }
+
+  .title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(2.8rem, 10vw, 4.5rem);
+    font-weight: 300;
+    color: #2e2218;
+    line-height: 1.05;
+  }
+  .title em { font-style: italic; color: #b07d4e; }
+
+  .subtitle {
+    font-size: 0.72rem;
+    letter-spacing: 0.25em;
+    color: #a08878;
+    text-transform: uppercase;
+    margin-top: 0.6rem;
+    display: block;
+  }
+
+  /* ── Divider ── */
+  .divider {
+    display: flex; align-items: center; gap: 1rem;
+    width: 100%; max-width: 500px;
+    margin: 0 auto 1.8rem;
+  }
+  .divider-line {
+    flex: 1; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(201,168,124,0.6), transparent);
+  }
+  .divider-rose { color: #c9a87c; font-size: 1.1rem; }
+
+  /* ── Tagline ── */
+  .tagline {
+    text-align: center;
+    color: #7a6a5a;
+    font-size: 0.92rem;
+    line-height: 1.9;
+    margin-bottom: 2rem;
+    animation: fadeIn 1s 0.4s both;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; } to { opacity: 1; }
+  }
+
+  /* ── Form Container ── */
+  .form-wrap {
+    width: 100%; max-width: 640px;
+    background: rgba(255,255,255,0.78);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(210,180,150,0.3);
+    border-radius: 28px;
+    overflow: hidden;
+    box-shadow:
+      0 4px 6px rgba(180,140,100,0.05),
+      0 16px 48px rgba(180,140,100,0.14),
+      0 48px 96px rgba(180,140,100,0.07);
+    animation: cardIn 0.9s 0.2s cubic-bezier(0.22,1,0.36,1) both;
+  }
+  @keyframes cardIn {
+    from { opacity: 0; transform: translateY(32px) scale(0.98); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  /* ── Form header strip ── */
+  .form-header {
+    background: linear-gradient(135deg, #c9a87c 0%, #b07d4e 100%);
+    padding: 1.6rem 2rem;
+    text-align: center;
+  }
+  .form-header-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.5rem;
+    font-weight: 300;
+    color: white;
+    letter-spacing: 0.05em;
+  }
+  .form-header-sub {
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.8);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-top: 0.3rem;
+  }
+
+  /* ── Iframe ── */
+  .form-iframe {
+    width: 100%;
+    height: 720px;
+    border: none;
+    display: block;
+    background: transparent;
+  }
+
+  /* ── Footer note ── */
+  .footer-note {
+    text-align: center;
+    font-size: 0.7rem;
+    color: #c9a87c;
+    margin-top: 1.4rem;
+    letter-spacing: 0.06em;
+    animation: fadeIn 1s 1s both;
+  }
+
+  /* ── Bottom ornament ── */
+  .bottom-ornament {
+    margin-top: 2.5rem;
+    text-align: center;
+    animation: fadeIn 1s 1.2s both;
+  }
+  .bottom-ornament span {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1rem;
+    color: #c9a87c;
+    letter-spacing: 0.3em;
+    font-style: italic;
+  }
+
+  @media (max-width: 480px) {
+    .page { padding: 2rem 0.6rem 4rem; }
+    .form-wrap { border-radius: 20px; }
+    .form-iframe { height: 780px; }
+    .form-header { padding: 1.3rem 1.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg"></div>
+<div id="petals"></div>
+
+<div class="page">
+
+  <!-- Header -->
+  <div class="header">
+    <span class="ornament">✦ ✦ ✦</span>
+    <h1 class="title">Mark <em>&amp;</em> Kati</h1>
+    <span class="subtitle">Digitales Gästebuch · 2026</span>
+  </div>
+
+  <!-- Divider -->
+  <div class="divider">
+    <div class="divider-line"></div>
+    <span class="divider-rose">🌸</span>
+    <div class="divider-line"></div>
+  </div>
+
+  <!-- Tagline -->
+  <p class="tagline">
+    Wir freuen uns über jeden Moment, den ihr mit uns teilt.<br>
+    Ladet eure Fotos &amp; Videos hoch und hinterlasst uns eine Nachricht. 💕
+  </p>
+
+  <!-- Form -->
+  <div class="form-wrap">
+    <div class="form-header">
+      <div class="form-header-title">📷 Foto &amp; Nachricht hochladen</div>
+      <div class="form-header-sub">Kein Anmelden nötig · Direkt &amp; einfach</div>
+    </div>
+    <iframe
+      class="form-iframe"
+      src="https://docs.google.com/forms/d/e/1FAIpQLSe5fXDJkPs-ErJAGutadWb4qKUb33Vqm9WZAFUDF94wkob3Bw/viewform?embedded=true"
+      frameborder="0"
+      marginheight="0"
+      marginwidth="0"
+      title="Hochzeit Gästebuch Formular"
+    >Wird geladen…</iframe>
+  </div>
+
+  <p class="footer-note">🔒 Eure Fotos werden sicher in unserem Google Drive gespeichert</p>
+
+  <div class="bottom-ornament">
+    <span>✦ &nbsp; mit Liebe für euch &nbsp; ✦</span>
+  </div>
+
+</div>
+
+<script>
+  // Petals
+  const container = document.getElementById('petals');
+  const emojis = ['🌸', '🌷', '💮', '🌺'];
+  for (let i = 0; i < 18; i++) {
+    const el = document.createElement('div');
+    el.className = 'petal';
+    el.textContent = emojis[i % emojis.length];
+    el.style.cssText = `
+      left: ${(i * 5.7) % 100}%;
+      font-size: ${9 + (i % 5) * 4}px;
+      opacity: ${0.08 + (i % 7) * 0.05};
+      animation-duration: ${7 + (i % 6)}s;
+      animation-delay: ${(i * 0.7) % 10}s;
+    `;
+    container.appendChild(el);
+  }
+</script>
+</body>
+</html>
