@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mark & Kati – Digitales Gästebuch</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet" />
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://apis.google.com/js/api.js" async defer></script>
+<style>
+  /* ── Reset & Base ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    min-height: 100vh;
+    font-family: 'Jost', sans-serif;
+    font-weight: 300;
+    background: #faf6f0;
+    color: #3a2e24;
+    overflow-x: hidden;
+  }
+
+  /* ── Background ── */
+  .bg {
+    position: fixed; inset: 0; z-index: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 20% 10%, rgba(255,220,190,0.45) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 80% at 80% 90%, rgba(230,195,170,0.35) 0%, transparent 60%),
+      radial-gradient(ellipse 100% 100% at 50% 50%, #fdf8f2 0%, #f5ece0 100%);
+  }
+
+  /* ── Petals ── */
+  .petal {
+    position: fixed; top: -30px; pointer-events: none; z-index: 1;
+    animation: petalFall linear infinite;
+    user-select: none;
+  }
+  @keyframes petalFall {
+    0%   { transform: translateY(0) rotate(0deg) scale(1); opacity: 0; }
+    5%   { opacity: 1; }
+    95%  { opacity: 0.7; }
+    100% { transform: translateY(105vh) rotate(400deg) scale(0.8); opacity: 0; }
+  }
+
+  /* ── Layout ── */
+  .page {
+    position: relative; z-index: 2;
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 3rem 1.2rem 5rem;
+  }
+
+  /* ── Card ── */
+  .card {
+    width: 100%; max-width: 480px;
+    background: rgba(255,255,255,0.75);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(210,180,150,0.35);
+    border-radius: 28px;
+    padding: 2.8rem 2.2rem;
+    box-shadow:
+      0 4px 6px rgba(180,140,100,0.06),
+      0 12px 40px rgba(180,140,100,0.13),
+      0 40px 80px rgba(180,140,100,0.08);
+    animation: cardIn 0.7s cubic-bezier(0.22,1,0.36,1) both;
+  }
+  @keyframes cardIn {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── Header ── */
+  .ornament {
+    text-align: center;
+    font-size: 0.75rem;
+    letter-spacing: 0.55em;
+    color: #c9a87c;
+    margin-bottom: 0.6rem;
+    animation: fadeIn 1s 0.3s both;
+  }
+  .title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(2.2rem, 8vw, 3rem);
+    font-weight: 300;
+    color: #2e2218;
+    text-align: center;
+    line-height: 1.1;
+    cursor: default;
+    user-select: none;
+    animation: fadeIn 1s 0.4s both;
+  }
+  .title em { font-style: italic; color: #b07d4e; }
+  .subtitle {
+    text-align: center;
+    font-size: 0.72rem;
+    letter-spacing: 0.22em;
+    color: #a08878;
+    margin-top: 0.5rem;
+    text-transform: uppercase;
+    animation: fadeIn 1s 0.5s both;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── Divider ── */
+  .divider {
+    display: flex; align-items: center; gap: 0.9rem;
+    margin: 1.6rem 0;
+  }
+  .divider-line {
+    flex: 1; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(201,168,124,0.6), transparent);
+  }
+  .divider-icon { color: #c9a87c; font-size: 1rem; }
+
+  /* ── Intro text ── */
+  .intro {
+    text-align: center;
+    color: #7a6a5a;
+    font-size: 0.9rem;
+    line-height: 1.85;
+  }
+
+  /* ── Form ── */
+  .field { margin-top: 1.3rem; }
+  label {
+    display: block;
+    font-size: 0.68rem;
+    letter-spacing: 0.18em;
+    color: #a08878;
+    text-transform: uppercase;
+    margin-bottom: 0.45rem;
+    font-weight: 400;
+  }
+  input[type=text], textarea {
+    width: 100%;
+    background: rgba(255,255,255,0.65);
+    border: 1px solid rgba(200,170,130,0.45);
+    border-radius: 12px;
+    padding: 0.8rem 1.1rem;
+    font-family: 'Jost', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 300;
+    color: #2e2218;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    -webkit-appearance: none;
+  }
+  input[type=text]:focus, textarea:focus {
+    border-color: #c9a87c;
+    box-shadow: 0 0 0 3px rgba(201,168,124,0.18);
+  }
+  textarea { resize: vertical; min-height: 88px; }
+
+  /* ── Upload Zone ── */
+  .upload-zone {
+    margin-top: 0.5rem;
+    border: 2px dashed rgba(201,168,124,0.55);
+    border-radius: 18px;
+    padding: 2rem 1rem;
+    text-align: center;
+    cursor: pointer;
+    background: rgba(255,248,240,0.55);
+    transition: all 0.25s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .upload-zone:hover, .upload-zone.drag { 
+    border-color: #c9a87c;
+    background: rgba(255,248,240,0.9);
+    transform: scale(1.01);
+  }
+  .upload-zone.disabled { opacity: 0.5; pointer-events: none; }
+  .upload-icon { font-size: 2.2rem; margin-bottom: 0.5rem; }
+  .upload-label { font-family: 'Cormorant Garamond', serif; font-size: 1.15rem; color: #6b5744; }
+  .upload-hint { font-size: 0.72rem; color: #b8a898; margin-top: 0.35rem; }
+
+  /* ── Previews ── */
+  .previews { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 1rem; }
+  .preview-item {
+    position: relative; width: 72px; height: 72px;
+    border-radius: 12px; overflow: hidden;
+    border: 2px solid rgba(201,168,124,0.35);
+    transition: border-color 0.3s;
+  }
+  .preview-item.done  { border-color: #7cb87c; }
+  .preview-item.error { border-color: #e07878; }
+  .preview-item img, .preview-item video {
+    width: 100%; height: 100%; object-fit: cover;
+  }
+  .preview-badge {
+    position: absolute; bottom: 2px; right: 3px;
+    font-size: 0.8rem;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.4));
+  }
+
+  /* ── Button ── */
+  .btn {
+    display: block; width: 100%;
+    margin-top: 1.6rem; padding: 1rem;
+    background: linear-gradient(135deg, #c9a87c 0%, #b07d4e 100%);
+    color: white; border: none; border-radius: 14px;
+    font-family: 'Jost', sans-serif;
+    font-size: 0.88rem; font-weight: 400;
+    letter-spacing: 0.14em;
+    cursor: pointer;
+    box-shadow: 0 4px 24px rgba(176,125,78,0.38);
+    transition: all 0.2s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(176,125,78,0.48);
+  }
+  .btn:active:not(:disabled) { transform: translateY(0); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .btn.ghost {
+    background: transparent; color: #a08878;
+    border: 1px solid rgba(201,168,124,0.45);
+    box-shadow: none; margin-top: 0.8rem;
+  }
+
+  /* ── Security note ── */
+  .secure-note {
+    text-align: center; font-size: 0.68rem;
+    color: #c9a87c; margin-top: 0.7rem;
+    letter-spacing: 0.05em;
+  }
+
+  /* ── Error ── */
+  .error-msg {
+    color: #c05050; font-size: 0.82rem;
+    margin-top: 0.8rem; line-height: 1.5;
+    background: rgba(255,220,220,0.35);
+    border-radius: 8px; padding: 0.6rem 0.8rem;
+  }
+
+  /* ── Success ── */
+  .success-icon { font-size: 4rem; text-align: center; margin: 1rem 0; }
+  .success-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2.2rem; font-weight: 300;
+    color: #2e2218; text-align: center;
+  }
+  .success-text { text-align: center; color: #7a6a5a; font-size: 0.9rem; line-height: 1.9; margin-top: 0.8rem; }
+  .guest-name-highlight {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.2rem; color: #b07d4e;
+  }
+
+  /* ── Admin ── */
+  .admin-link {
+    display: block; text-align: center;
+    text-decoration: none;
+    padding: 0.9rem;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #c9a87c, #b07d4e);
+    color: white;
+    font-family: 'Jost', sans-serif;
+    font-size: 0.88rem; letter-spacing: 0.12em;
+    margin-top: 1.6rem;
+    box-shadow: 0 4px 24px rgba(176,125,78,0.38);
+  }
+
+  /* ── Warning banner ── */
+  .setup-warning {
+    background: rgba(255,243,205,0.9);
+    border: 1px solid #ffc107;
+    border-radius: 12px;
+    padding: 1rem; margin-bottom: 1.2rem;
+    font-size: 0.82rem; color: #7a5c00; line-height: 1.7;
+  }
+  .setup-warning a { color: #7a5c00; font-weight: 500; }
+
+  @media (max-width: 480px) {
+    .card { padding: 2.2rem 1.5rem; border-radius: 20px; }
+    .page { padding: 2rem 0.8rem 4rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg"></div>
+<div id="petals-container"></div>
+
+<div class="page">
+  <div class="card" id="main-card">
+    <!-- Content injected by JS -->
+  </div>
+</div>
+
+<script>
+// ── CONFIG ────────────────────────────────────────────────────────────────────
+const CONFIG = {
+  CLIENT_ID: "647082584550-4i2lju63uos83mjhithh6eshq1unf2i8.apps.googleusercontent.com",
+  FOLDER_ID: "1dDph5w6TI8DH1UuPE06RygrFP56p14cJ",
+  ADMIN_PW:  "MarkUndKati2025",
+};
+
+// ── Petals ────────────────────────────────────────────────────────────────────
+(function spawnPetals() {
+  const container = document.getElementById('petals-container');
+  for (let i = 0; i < 16; i++) {
+    const el = document.createElement('div');
+    el.className = 'petal';
+    el.textContent = '🌸';
+    el.style.cssText = `
+      left: ${(i * 6.5) % 100}%;
+      font-size: ${10 + (i % 5) * 4}px;
+      opacity: ${0.1 + (i % 6) * 0.06};
+      animation-duration: ${6 + (i % 6)}s;
+      animation-delay: ${(i * 0.9) % 9}s;
+    `;
+    container.appendChild(el);
+  }
+})();
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let state = {
+  view: 'guest', // guest | success | admin
+  name: '',
+  message: '',
+  files: [],
+  statuses: {}, // filename -> waiting|uploading|done|error
+  uploading: false,
+  error: '',
+  successName: '',
+  successCount: 0,
+  adminPw: '',
+  adminUnlocked: false,
+  tapCount: 0,
+  accessToken: null,
+  gapiReady: false,
+};
+
+// ── Google Auth ───────────────────────────────────────────────────────────────
+function waitForGapi(cb) {
+  if (window.gapi && window.google?.accounts?.oauth2) { cb(); return; }
+  setTimeout(() => waitForGapi(cb), 200);
+}
+
+function initGapi(cb) {
+  if (state.gapiReady) { cb(); return; }
+  waitForGapi(() => {
+    gapi.load('client', () => {
+      gapi.client.init({
+        discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest']
+      }).then(() => {
+        state.gapiReady = true;
+        cb();
+      }).catch(err => {
+        console.error('gapi init error', err);
+        cb(err);
+      });
+    });
+  });
+}
+
+function getToken() {
+  return new Promise((resolve, reject) => {
+    initGapi((err) => {
+      if (err) { reject(new Error('Google API konnte nicht geladen werden.')); return; }
+      if (state.accessToken) { resolve(state.accessToken); return; }
+      const tc = google.accounts.oauth2.initTokenClient({
+        client_id: CONFIG.CLIENT_ID,
+        scope: 'https://www.googleapis.com/auth/drive.file',
+        callback: (resp) => {
+          if (resp.error) { reject(new Error('Anmeldung fehlgeschlagen: ' + resp.error)); return; }
+          state.accessToken = resp.access_token;
+          resolve(resp.access_token);
+        },
+      });
+      tc.requestAccessToken({ prompt: 'consent' });
+    });
+  });
+}
+
+async function uploadFile(file, token) {
+  const ts = new Date().toISOString().slice(0,19).replace(/[:.]/g,'-');
+  const safe = state.name.replace(/[^a-zA-ZäöüÄÖÜß0-9 ]/g,'').replace(/\s+/g,'_');
+  const ext = file.name.split('.').pop();
+  const fname = `${safe}_${ts}.${ext}`;
+  const meta = {
+    name: fname,
+    parents: [CONFIG.FOLDER_ID],
+    description: `Gast: ${state.name}` + (state.message ? `\nNachricht: ${state.message}` : ''),
+  };
+  const form = new FormData();
+  form.append('metadata', new Blob([JSON.stringify(meta)], { type: 'application/json' }));
+  form.append('file', file);
+  const res = await fetch(
+    'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name',
+    { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: form }
+  );
+  if (!res.ok) {
+    const e = await res.json().catch(() => ({}));
+    throw new Error(e?.error?.message || `HTTP ${res.status}`);
+  }
+  return await res.json();
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+function render() {
+  const card = document.getElementById('main-card');
+  if (state.view === 'guest')   card.innerHTML = renderGuest();
+  if (state.view === 'success') card.innerHTML = renderSuccess();
+  if (state.view === 'admin')   card.innerHTML = renderAdmin();
+  bindEvents();
+}
+
+function header() {
+  return `
+    <div class="ornament">✦ ✦ ✦</div>
+    <h1 class="title" id="tap-title">Mark <em>&amp;</em> Kati</h1>
+    <p class="subtitle">Digitales Gästebuch · 2026</p>
+  `;
+}
+
+function divider() {
+  return `<div class="divider"><div class="divider-line"></div><span class="divider-icon">🌸</span><div class="divider-line"></div></div>`;
+}
+
+function renderGuest() {
+  const previewsHtml = state.files.map(f => {
+    const url = URL.createObjectURL(f);
+    const st = state.statuses[f.name] || 'waiting';
+    const icon = { waiting:'⏳', uploading:'⬆️', done:'✅', error:'❌' }[st];
+    const isVid = f.type.startsWith('video/');
+    return `<div class="preview-item ${st}">
+      ${isVid ? `<video src="${url}" muted></video>` : `<img src="${url}" alt="" />`}
+      <div class="preview-badge">${icon}</div>
+    </div>`;
+  }).join('');
+
+  return `
+    ${header()}
+    ${divider()}
+    <p class="intro">Schieß ein Foto oder ein kurzes Video<br>und lass es Teil unserer Erinnerung werden. 💕</p>
+
+    <div class="field">
+      <label>Dein Name *</label>
+      <input type="text" id="inp-name" placeholder="z. B. Anna &amp; Thomas" value="${escHtml(state.name)}" ${state.uploading?'disabled':''} />
+    </div>
+
+    <div class="field">
+      <label>Nachricht (optional)</label>
+      <textarea id="inp-msg" placeholder="Alles Gute für euren gemeinsamen Weg …" ${state.uploading?'disabled':''}>${escHtml(state.message)}</textarea>
+    </div>
+
+    <div class="field">
+      <label>Fotos &amp; Videos * (max. 50 MB pro Datei)</label>
+      <div class="upload-zone ${state.uploading?'disabled':''}" id="upload-zone">
+        <input type="file" id="file-input" accept="image/*,video/*" multiple style="display:none" ${state.uploading?'disabled':''} />
+        <div class="upload-icon">📷</div>
+        <p class="upload-label">Tippen zum Auswählen</p>
+        <p class="upload-hint">oder Dateien hierher ziehen · JPG, PNG, MP4, MOV …</p>
+      </div>
+    </div>
+
+    ${state.files.length > 0 ? `<div class="previews">${previewsHtml}</div>` : ''}
+    ${state.error ? `<div class="error-msg">⚠️ ${escHtml(state.error)}</div>` : ''}
+
+    <button class="btn" id="btn-upload" ${(!state.name.trim() || state.files.length===0 || state.uploading)?'disabled':''}>
+      ${state.uploading ? 'Wird hochgeladen …' : '💌 Absenden &amp; in Google Drive speichern'}
+    </button>
+    <p class="secure-note">🔒 Direkt in unseren Google Drive – sicher &amp; privat</p>
+  `;
+}
+
+function renderSuccess() {
+  return `
+    ${header()}
+    ${divider()}
+    <div class="success-icon">🎉</div>
+    <h2 class="success-title">Vielen Dank!</h2>
+    <p class="success-text">
+      <span class="guest-name-highlight">${escHtml(state.successName)}</span><br>
+      ${state.successCount === 1 ? 'Dein Beitrag wurde' : `Deine ${state.successCount} Dateien wurden`} in unserem<br>
+      Gästebuch gespeichert. Wir freuen uns riesig! 💕
+    </p>
+    <button class="btn" id="btn-reset">Noch ein Foto hochladen</button>
+  `;
+}
+
+function renderAdmin() {
+  return `
+    <h2 class="title" style="font-size:1.9rem">Admin</h2>
+    <p class="subtitle">Nur für Mark &amp; Kati</p>
+    ${divider()}
+    ${!state.adminUnlocked ? `
+      <div class="field">
+        <label>Passwort</label>
+        <input type="password" id="inp-pw" placeholder="••••••••" value="${escHtml(state.adminPw)}" />
+      </div>
+      <button class="btn" id="btn-unlock">Entsperren</button>
+      <button class="btn ghost" id="btn-back">← Zurück</button>
+    ` : `
+      <p style="text-align:center;color:#7a6a5a;font-size:.9rem;line-height:1.85">
+        Alle Fotos &amp; Videos findet ihr direkt<br>in eurem Google Drive Ordner:<br>
+        <strong style="font-family:'Cormorant Garamond',serif;font-size:1.1rem">📁 Hochzeit Gästebuch</strong>
+      </p>
+      <a class="admin-link" href="https://drive.google.com/drive/folders/${CONFIG.FOLDER_ID}" target="_blank">
+        📂 Google Drive öffnen
+      </a>
+      <button class="btn ghost" id="btn-back">← Zur Upload-Seite</button>
+    `}
+  `;
+}
+
+// ── Events ────────────────────────────────────────────────────────────────────
+function bindEvents() {
+  // Title tap (secret admin)
+  const tapTitle = document.getElementById('tap-title');
+  if (tapTitle) tapTitle.addEventListener('click', () => {
+    state.tapCount++;
+    if (state.tapCount >= 5) { state.tapCount = 0; state.view = 'admin'; render(); }
+  });
+
+  // Name & message
+  const inpName = document.getElementById('inp-name');
+  if (inpName) inpName.addEventListener('input', e => { state.name = e.target.value; updateBtn(); });
+  const inpMsg = document.getElementById('inp-msg');
+  if (inpMsg) inpMsg.addEventListener('input', e => { state.message = e.target.value; });
+
+  // Upload zone
+  const zone = document.getElementById('upload-zone');
+  const fileInput = document.getElementById('file-input');
+  if (zone && fileInput) {
+    zone.addEventListener('click', () => fileInput.click());
+    zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag'); });
+    zone.addEventListener('dragleave', () => zone.classList.remove('drag'));
+    zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('drag'); addFiles(e.dataTransfer.files); });
+    fileInput.addEventListener('change', e => addFiles(e.target.files));
+  }
+
+  // Upload button
+  const btnUpload = document.getElementById('btn-upload');
+  if (btnUpload) btnUpload.addEventListener('click', doUpload);
+
+  // Reset
+  const btnReset = document.getElementById('btn-reset');
+  if (btnReset) btnReset.addEventListener('click', () => {
+    state.files = []; state.statuses = {}; state.name = '';
+    state.message = ''; state.error = ''; state.view = 'guest';
+    render();
+  });
+
+  // Admin
+  const inpPw = document.getElementById('inp-pw');
+  if (inpPw) inpPw.addEventListener('input', e => { state.adminPw = e.target.value; });
+  if (inpPw) inpPw.addEventListener('keydown', e => { if (e.key==='Enter') tryUnlock(); });
+  const btnUnlock = document.getElementById('btn-unlock');
+  if (btnUnlock) btnUnlock.addEventListener('click', tryUnlock);
+  const btnBack = document.getElementById('btn-back');
+  if (btnBack) btnBack.addEventListener('click', () => { state.view = 'guest'; render(); });
+}
+
+function tryUnlock() {
+  if (state.adminPw === CONFIG.ADMIN_PW) { state.adminUnlocked = true; render(); }
+  else { alert('Falsches Passwort'); }
+}
+
+function updateBtn() {
+  const btn = document.getElementById('btn-upload');
+  if (btn) btn.disabled = !state.name.trim() || state.files.length === 0 || state.uploading;
+}
+
+function addFiles(fileList) {
+  const arr = Array.from(fileList);
+  const ok = arr.filter(f => f.size <= 50*1024*1024);
+  const big = arr.filter(f => f.size > 50*1024*1024);
+  if (big.length) state.error = `${big.length} Datei(en) überschreiten 50 MB und wurden übersprungen.`;
+  else state.error = '';
+  state.files = [...state.files, ...ok];
+  render();
+}
+
+async function doUpload() {
+  if (!state.name.trim() || state.files.length === 0) return;
+  state.error = '';
+  state.uploading = true;
+  render();
+
+  try {
+    const token = await getToken();
+    let okCount = 0;
+    for (const f of state.files) {
+      state.statuses[f.name] = 'uploading';
+      render();
+      try {
+        await uploadFile(f, token);
+        state.statuses[f.name] = 'done';
+        okCount++;
+      } catch(e) {
+        state.statuses[f.name] = 'error';
+        state.error = `Fehler bei "${f.name}": ${e.message}`;
+      }
+      render();
+    }
+    state.uploading = false;
+    if (okCount > 0) {
+      state.successName = state.name;
+      state.successCount = okCount;
+      state.view = 'success';
+    }
+  } catch(e) {
+    state.error = e.message || 'Google-Anmeldung fehlgeschlagen oder abgebrochen.';
+    state.uploading = false;
+  }
+  render();
+}
+
+function escHtml(str) {
+  return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+render();
+</script>
+</body>
+</html>
